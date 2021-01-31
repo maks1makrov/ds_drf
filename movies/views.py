@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from movies.models import Movie
-from movies.serializers import MovieListSerializer, MovieDetailSerializer
+from movies.serializers import MovieListSerializer, MovieDetailSerializer, CreateReviewSerializer
 
 
 class TestView(View):
@@ -36,3 +36,10 @@ class MovieDetailView(APIView):
         movie = Movie.objects.get(id=id)
         serializer = MovieDetailSerializer(movie)
         return Response(serializer.data)
+
+class ReviewCreateView(APIView):
+    def post(self, request):
+        serializer = CreateReviewSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+        return Response(status=201)
