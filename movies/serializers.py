@@ -45,3 +45,17 @@ class MovieDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
         exclude = ('draft',)
+
+class CreateRatingSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Rating
+        fields = ('star', 'movie')
+
+    def create(self, validated_data):
+        rating = Rating.objects.update_or_create(
+            ip=validated_data.get('ip'),
+            movie=validated_data.get('movie'),
+            defaults={'star': validated_data.get("star")}
+        )
+        return rating
