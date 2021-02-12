@@ -4,9 +4,11 @@ from .models import Movie, Review, Rating, Actor
 
 
 class MovieListSerializer(serializers.ModelSerializer):
+    rating = serializers.IntegerField()
+    rating_user = serializers.BooleanField()
     class Meta:
         model = Movie
-        fields = ('title', 'tagline', 'category')
+        fields = ('title', 'tagline', 'category', 'rating_user', 'rating')
 
 
 class CreateReviewSerializer(serializers.ModelSerializer):

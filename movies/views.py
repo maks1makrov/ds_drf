@@ -1,3 +1,5 @@
+from django.db.models import Sum, Count, Value, IntegerField
+from django.db.models.functions import Cast
 from django.shortcuts import render
 from django.views import View
 from rest_framework.generics import ListAPIView
@@ -7,6 +9,7 @@ from rest_framework.views import APIView
 from movies.models import Movie
 from movies.serializers import MovieListSerializer, MovieDetailSerializer, CreateReviewSerializer, \
     CreateRatingSerializer
+from movies.service import get_client_ip
 
 
 class TestView(View):
@@ -26,17 +29,22 @@ class TestView(View):
 
 class MovieListView(APIView):
     def get(self, request):
-        movies = Movie.objects.filter(draft=False)
+        movies = Movie.objects.filter(draft=False).annotate(rating=(Sum('ratings__star') / Count("ratings"))).\
+            annotate(rating_user=Count('ratings', filter='ratings__star' == get_client_ip(request)))
         serializer = MovieListSerializer(movies, many=True)
+        print(get_client_ip(request))
+
         return Response(serializer.data)
 
 
 class MovieDetailView(APIView):
     """детальная инфорация по фильму"""
+
     def get(self, request, id):
         movie = Movie.objects.get(id=id)
         serializer = MovieDetailSerializer(movie)
         return Response(serializer.data)
+
 
 class ReviewCreateView(APIView):
     def post(self, request):
@@ -45,20 +53,13 @@ class ReviewCreateView(APIView):
             serializer.save()
         return Response(status=201)
 
-class CreateRatingView(APIView):
 
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+class CreateRatingView(APIView):
 
     def post(self, request):
         serializer = CreateRatingSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(ip=self.get_client_ip(request))
+            serializer.save(ip=get_client_ip(request))
             return Response(status=201)
         else:
             return Response(status=400)
